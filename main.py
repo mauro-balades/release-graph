@@ -14,6 +14,8 @@ def fetch_release_stats(owner, repo):
     monthly_downloads = defaultdict(int)
     
     for release in releases:
+        if "Twilight" in release['name']:
+            continue
         print(f"Processing release: {release['name']}")
         release_date = datetime.strptime(release['published_at'], "%Y-%m-%dT%H:%M:%SZ")
         month_key = release_date.strftime("%Y-%m")
@@ -22,10 +24,16 @@ def fetch_release_stats(owner, repo):
             print(f"\tAsset: {asset['name']} - {asset['download_count']} downloads")
             monthly_downloads[month_key] += asset['download_count']
     
-    return dict(sorted(monthly_downloads.items()))
+    version_downloads = defaultdict(int)
+    for release in releases:
+        if "Twilight" in release['name']:
+            continue
+        version_downloads[release['name']] = sum(asset['download_count'] for asset in release['assets'])
+
+    return [dict(sorted(monthly_downloads.items())), dict(sorted(version_downloads.items()))]
 
 # Plotting the graph
-def plot_downloads(downloads):
+def plot_downloads(downloads, releases):
     months = list(downloads.keys())
     counts = list(downloads.values())
 
@@ -35,6 +43,10 @@ def plot_downloads(downloads):
     print("\n\nMonthly Downloads\n")
     for month, count in downloads.items():
         print(f"{month}: {'#' * (count * 50 // max_count)} ({count})")
+    print("\n\nRelease Downloads\n")
+    for release, count in releases.items():
+        # align all of them
+        print(f"{release.ljust(50)} ({f'{str(count)})'.rjust(7)}: {'#' * (count * 50 // max_count)}")
     print("\nTotal Downloads: ", sum(counts))
 
 if __name__ == "__main__":
@@ -44,4 +56,4 @@ if __name__ == "__main__":
     owner = sys.argv[1]  # Pass the owner name as a command-line argument
     repo = sys.argv[2]  # Pass the repo name as a command-line argument
     stats = fetch_release_stats(owner, repo)
-    plot_downloads(stats)
+    plot_downloads(stats[0], stats[1])
