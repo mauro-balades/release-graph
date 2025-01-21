@@ -1,5 +1,4 @@
 import requests
-import matplotlib.pyplot as plt
 from datetime import datetime
 from collections import defaultdict
 import sys
@@ -29,15 +28,14 @@ def fetch_release_stats(owner, repo):
 def plot_downloads(downloads):
     months = list(downloads.keys())
     counts = list(downloads.values())
+
+    max_count = max(counts)
     
-    plt.figure(figsize=(10, 6))
-    plt.bar(months, counts, color='skyblue')
-    plt.xlabel("Month")
-    plt.ylabel("Downloads")
-    plt.title("Monthly Downloads from GitHub Releases")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
+    # Show it on a text-based graph
+    print("\n\nMonthly Downloads\n")
+    for month, count in downloads.items():
+        print(f"{month}: {'#' * (count * 50 // max_count)} ({count})")
+    print("\nTotal Downloads: ", sum(counts))
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
