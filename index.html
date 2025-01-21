@@ -1,0 +1,56 @@
+<div>
+<div id="releaseStats" style="background:black;color:white;padding: 1rem;border-radius: 1rem;">
+    <h2>GitHub Release Statistics</h2>
+    <div id="monthlyDownloads"></div>
+    <div id="releaseDownloads"></div>
+    <div id="totalDownloads"></div>
+</div>
+<script>
+async function fetchReleaseStats(owner, repo) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
+    const response = await fetch(url, {
+        headers: { "Accept": "application/vnd.github.v3+json" }
+    });
+    const releases = await response.json();
+    const monthlyDownloads = {};
+    const versionDownloads = {};   
+    for (const release of releases) {
+        if (release.name.includes("Twilight")) continue;
+        const releaseDate = new Date(release.published_at);
+        const monthKey = `${releaseDate.getFullYear()}-${String(releaseDate.getMonth() + 1).padStart(2, '0')}`;
+        let downloadCount = 0;
+        for (const asset of release.assets) {
+            downloadCount += asset.download_count;
+        }
+        monthlyDownloads[monthKey] = (monthlyDownloads[monthKey] || 0) + downloadCount;
+        versionDownloads[release.name] = downloadCount;
+    }
+    return [monthlyDownloads, versionDownloads];
+}
+function displayDownloads(downloads, elementId) {
+    const maxCount = Math.max(...Object.values(downloads));
+    let html = '<ul>';   
+    for (const [key, count] of Object.entries(downloads)) {
+        const barWidth = (count / maxCount) * 55;
+        html += `<li>${key}: <div style="display: inline-block; width: ${barWidth}%; background-color: #007bff;">&nbsp;</div> (${count})</li>`;
+    }
+    html += '</ul>';
+    document.getElementById(elementId).innerHTML = html;
+}
+async function displayReleaseStats(owner, repo) {
+    try {
+        const [monthlyDownloads, releaseDownloads] = await fetchReleaseStats(owner, repo);       
+        document.getElementById('monthlyDownloads').innerHTML = '<h3>Monthly Downloads</h3>';
+        displayDownloads(monthlyDownloads, 'monthlyDownloads');
+        document.getElementById('releaseDownloads').innerHTML = '<h3>Release Downloads</h3>';
+        displayDownloads(releaseDownloads, 'releaseDownloads');
+        const totalDownloads = Object.values(monthlyDownloads).reduce((a, b) => a + b, 0);
+        document.getElementById('totalDownloads').innerHTML = `<h3>Total Downloads: ${totalDownloads}</h3>`;
+    } catch (error) {
+        console.error('Error fetching release stats:', error);
+        document.getElementById('releaseStats').innerHTML = '<p>Error fetching release stats. Please try again later.</p>';
+    }
+}
+displayReleaseStats('zen-browser', 'desktop');
+</script>
+</div>
